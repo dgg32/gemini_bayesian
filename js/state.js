@@ -1,0 +1,11 @@
+let network = null;
+let nodesSet = new vis.DataSet();
+let edgesSet = new vis.DataSet();
+let currentEvidence = {};
+let globalNodeData = {};
+let currentProject = 'default';
+let labelColors = {};        // { labelName → hex color }
+let currentProperties = {}; // { key → {value, type} } for node currently in the editor
+let currentNodeId = null;   // node currently loaded in the editor
+let currentEdge           = null;   // { from, to, edgeLabel } for edge currently selected
+let currentEdgeProperties = {};    // { key → {value, type} } for edge currently in the editor

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bayesian Network Editor</title>
+    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="network-container"></div>
+<div id="resize-handle"></div>
+<div id="panel">
+    <div id="project-bar">
+        <strong style="white-space:nowrap;">Project:</strong>
+        <select id="project-select" onchange="switchProject()"></select>
+        <input id="new-project-name" placeholder="New project name…">
+        <button onclick="createProject()" title="Create project">＋</button>
+        <button onclick="deleteProject()" title="Delete current project" class="btn-danger">🗑</button>
+    </div>
+    <div class="tabs">
+        <button id="tab-edit" onclick="switchMode('edit')">✏️ Edit Mode</button>
+        <button id="tab-inference" onclick="switchMode('inference')">🎯 Inference Mode</button>
+    </div>
+
+    <div id="mode-edit">
+        <button onclick="addNewNode()" class="btn-add">＋ Add Node</button>
+        <div id="edge-section" class="edge-section" style="display:none;">
+            <strong id="edge-title">Edge: ? → ?</strong>
+            <input id="edge-label-input" placeholder="Edge label (e.g., causes, treats)">
+            <div id="edge-properties-section">
+                <label>Properties:</label>
+                <div id="edge-properties-list"></div>
+                <div class="props-add-row">
+                    <input id="edge-prop-key"   placeholder="key">
+                    <input id="edge-prop-value" placeholder="value">
+                    <select id="edge-prop-type">
+                        <option>VARCHAR</option>
+                        <option>INTEGER</option>
+                        <option>BOOLEAN</option>
+                        <option>FLOAT</option>
+                        <option>TIMESTAMP</option>
+                    </select>
+                    <button onclick="addEdgeProperty()">+</button>
+                </div>
+            </div>
+            <div class="save-row">
+                <button onclick="saveEdgeLabel()" class="btn-success btn-action">Save Edge</button>
+                <span id="edge-dirty-badge" class="dirty-badge" style="display:none;">&#9679; Unsaved changes</span>
+            </div>
+        </div>
+        <div id="node-section" style="display:none;">
+            <h3 id="edit-title">Add / Edit Node</h3>
+            <input id="n-id" placeholder="Node ID (e.g., COVID)">
+            <input id="n-states" placeholder="States (e.g., Yes, No)" oninput="generateCPTTable()">
+            <input id="n-parents" placeholder="Parents (e.g., Travel, Smoking)" oninput="generateCPTTable()">
+            <div class="label-row">
+                <input id="n-label" placeholder="Label (optional)" oninput="onLabelInput()">
+                <input type="color" id="n-label-color" value="#ffffcc" title="Label color" class="label-color-picker">
+            </div>
+
+            <div id="properties-section">
+                <label>Properties:</label>
+                <div id="properties-list"></div>
+                <div id="properties-add-row">
+                    <input id="prop-key"   placeholder="key">
+                    <input id="prop-value" placeholder="value">
+                    <select id="prop-type">
+                        <option>VARCHAR</option>
+                        <option>INTEGER</option>
+                        <option>BOOLEAN</option>
+                        <option>FLOAT</option>
+                        <option>TIMESTAMP</option>
+                    </select>
+                    <button onclick="addProperty()">+</button>
+                </div>
+            </div>
+
+            <div class="cpt-controls">
+                <strong id="cpt-label">CPT Matrix</strong>
+                <div class="cpt-autofill">
+                    <span class="autofill-label">Auto-fill:</span>
+                    <button onclick="autoFillCPT('OR')"  title="First state acts as True; child=True if ANY parent is True" class="btn-sm">OR gate</button>
+                    <button onclick="autoFillCPT('AND')" title="First state acts as True; child=True only if ALL parents are True" class="btn-sm">AND gate</button>
+                    <button onclick="generateCPTTable()" class="btn-sm">Refresh</button>
+                </div>
+            </div>
+            <div id="cpt-table-container"><i>Enter states to generate table…</i></div>
+
+            <div class="save-row">
+                <button onclick="saveNode()" class="btn-success btn-action">Save Node</button>
+                <span id="node-dirty-badge" class="dirty-badge" style="display:none;">&#9679; Unsaved changes</span>
+                <button onclick="deleteNode()" class="btn-danger btn-action btn-delete-node">🗑 Delete Node</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="mode-inference" style="display: none;">
+        <h3>Set Evidence <small class="hint-text">(Ephemeral)</small></h3>
+        <p><small>Click a node in the graph to select it.</small></p>
+        <input id="ev-node" placeholder="Selected Node" readonly>
+        <select id="ev-state"></select>
+        <button onclick="addEvidence()">Set Evidence</button>
+        <button onclick="clearEvidence()" class="btn-danger">Clear All Evidence</button>
+        <h4>Current Evidence:</h4>
+        <div id="evidence-log">(none)</div>
+        <div id="inference-hints"><i class="hint-text">(set evidence to see rankings)</i></div>
+    </div>
+</div>
+
+<script src="js/state.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/graph.js"></script>
+<script src="js/projects.js"></script>
+<script src="js/cpt.js"></script>
+<script src="js/node-editor.js"></script>
+<script src="js/inference.js"></script>
+<script src="js/ui.js"></script>
+</body>
+</html>

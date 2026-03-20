@@ -1,0 +1,557 @@
+/* ── Design tokens ─────────────────────────────────────────────────────────── */
+:root {
+  --color-bg-canvas:  #f8f8f8;
+  --color-bg-panel:   #f0f0f0;
+  --color-bg-surface: #ffffff;
+  --color-border:     #d0d0d0;
+  --color-border-light: #e4e4e4;
+  --color-text-primary:   #1a1a1a;
+  --color-text-secondary: #555;
+  --color-text-muted:     #888;
+  --color-accent:     #3b7dd8;
+  --color-btn-add:    #cce5ff;
+  --color-btn-success:#d4edda;
+  --color-btn-danger: #f8d7da;
+  --color-edge-bg:    #e8f4ff;
+  --color-bar-parent: #5b9bd5;
+  --color-bar-child:  #70ad47;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  --transition: 0.15s ease;
+}
+
+/* ── Base layout ────────────────────────────────────────────────────────────── */
+body {
+  margin: 0;
+  display: flex;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  height: 100vh;
+  color: var(--color-text-primary);
+}
+
+#network-container {
+  flex: 1;
+  background: var(--color-bg-canvas);
+  min-width: 200px;
+}
+
+#resize-handle {
+  width: 5px;
+  background: var(--color-border);
+  cursor: col-resize;
+  flex-shrink: 0;
+  transition: background var(--transition);
+}
+
+#resize-handle:hover,
+#resize-handle.dragging {
+  background: #888;
+}
+
+#panel {
+  width: 450px;
+  min-width: 200px;
+  max-width: 80vw;
+  background: var(--color-bg-panel);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-left: 1px solid var(--color-border);
+}
+
+/* ── Form elements ─────────────────────────────────────────────────────────── */
+input, select, button {
+  padding: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 5px;
+  font-family: var(--font-ui);
+  font-size: 13px;
+}
+
+input, select {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+input:focus, select:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px rgba(59, 125, 216, 0.18);
+}
+
+input[readonly] {
+  background: #f4f4f4;
+  color: var(--color-text-secondary);
+  cursor: default;
+}
+
+/* ── Buttons ────────────────────────────────────────────────────────────────── */
+button {
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  border-radius: var(--radius-sm);
+  background: #e6e6e6;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  font-weight: 500;
+  outline: none;
+  transition: background var(--transition), box-shadow var(--transition), transform 0.08s ease;
+}
+
+button:hover {
+  background: #d9d9d9;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+button:focus-visible {
+  box-shadow: 0 0 0 2px rgba(59, 125, 216, 0.4);
+}
+
+button:active {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
+/* Button variants */
+.btn-add {
+  background: var(--color-btn-add) !important;
+  margin-bottom: 10px;
+}
+.btn-add:hover {
+  background: #b3d7f7 !important;
+}
+
+.btn-success {
+  background: var(--color-btn-success) !important;
+}
+.btn-success:hover {
+  background: #c3e6cb !important;
+}
+
+.btn-danger {
+  background: var(--color-btn-danger) !important;
+}
+.btn-danger:hover {
+  background: #f1c2c8 !important;
+}
+
+.btn-sm {
+  width: auto !important;
+  padding: 3px 8px !important;
+  font-size: 12px !important;
+  margin-bottom: 0 !important;
+}
+
+/* ── Project bar ────────────────────────────────────────────────────────────── */
+#project-bar {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 10px;
+}
+
+#project-bar select { flex: 1; min-width: 80px; }
+#project-bar input  { flex: 1; min-width: 80px; margin-bottom: 0; }
+#project-bar button { width: auto; padding: 8px 10px; margin-bottom: 0; }
+
+/* ── Tabs ───────────────────────────────────────────────────────────────────── */
+.tabs {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 10px;
+  background: rgba(0, 0, 0, 0.07);
+  border-radius: var(--radius-md);
+  padding: 3px;
+}
+
+.tabs button {
+  flex: 1;
+  cursor: pointer;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  padding: 7px 10px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  transition: background var(--transition), color var(--transition), box-shadow var(--transition);
+  margin-bottom: 0;
+}
+
+.tabs button:hover:not(.active) {
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--color-text-primary);
+  box-shadow: none;
+}
+
+.tabs button.active {
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+/* ── Edge section ───────────────────────────────────────────────────────────── */
+.edge-section {
+  background: var(--color-edge-bg);
+  padding: 8px;
+  border-radius: var(--radius-md);
+  border: 1px solid #c2dcf0;
+  margin-bottom: 10px;
+}
+
+.edge-section input {
+  margin-top: 6px;
+}
+
+.edge-section button {
+  margin-top: 4px;
+}
+
+/* ── Label + color picker row ───────────────────────────────────────────────── */
+.label-row {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.label-row input {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.label-color-picker {
+  width: 38px;
+  height: 34px;
+  padding: 2px;
+  flex-shrink: 0;
+  margin-bottom: 0;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+
+/* ── CPT controls ───────────────────────────────────────────────────────────── */
+.cpt-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 15px;
+}
+
+.cpt-autofill {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.cpt-autofill .autofill-label {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+/* ── CPT table ──────────────────────────────────────────────────────────────── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  background: var(--color-bg-surface);
+  font-size: 13px;
+  text-align: center;
+}
+
+th, td {
+  border: 1px solid var(--color-border-light);
+  padding: 5px;
+}
+
+th {
+  background: #e8e8e8;
+  font-weight: 500;
+}
+
+.cpt-input {
+  width: 60px;
+  padding: 4px;
+  text-align: center;
+  margin: 0;
+}
+
+/* ── Save row (button + unsaved badge inline) ───────────────────────────────── */
+.save-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 15px;
+  flex-wrap: wrap;
+}
+
+.save-row button {
+  width: auto;
+  flex-shrink: 0;
+  margin-bottom: 0;
+}
+
+/* Uniform size for Save Node, Save Edge, Delete Node */
+.btn-action {
+  width: auto !important;
+  padding: 7px 16px !important;
+  font-size: 13px !important;
+  margin-bottom: 0 !important;
+}
+
+.btn-delete-node {
+  margin-left: auto;
+}
+
+/* ── Unsaved-changes badge ───────────────────────────────────────────────────── */
+.dirty-badge {
+  display: inline-block;
+  font-size: 11px;
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 10px;
+  padding: 2px 9px;
+  margin-bottom: 0;
+  animation: badge-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes badge-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.55; }
+}
+
+/* ── Action buttons (save / delete / clear) ─────────────────────────────────── */
+
+#mode-inference .btn-danger { margin-top: 5px; }
+
+/* ── Properties section ─────────────────────────────────────────────────────── */
+#properties-section,
+#edge-properties-section {
+  margin-top: 8px;
+}
+
+#properties-section > label,
+#edge-properties-section > label {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  display: block;
+  margin-bottom: 4px;
+}
+
+#properties-list,
+#edge-properties-list {
+  min-height: 20px;
+}
+
+/* ── Properties table ────────────────────────────────────────────────────────── */
+.props-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-bottom: 4px;
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--color-border-light);
+}
+
+.props-table thead th {
+  background: #ebebeb;
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  text-align: left;
+  padding: 4px 7px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.props-table tbody tr:not(:last-child) td {
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.props-table tbody tr:hover {
+  background: #f5f8ff;
+}
+
+.props-table td {
+  padding: 4px 7px;
+  vertical-align: middle;
+}
+
+.props-td-key {
+  font-weight: 500;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.props-td-val {
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+}
+
+.props-td-type {
+  color: var(--color-text-muted);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+/* ── Add-property row ────────────────────────────────────────────────────────── */
+#properties-add-row,
+.props-add-row {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+  align-items: center;
+}
+
+#properties-add-row input,
+#properties-add-row select,
+.props-add-row input,
+.props-add-row select {
+  margin-bottom: 0;
+  width: auto;
+  min-width: 0;
+  flex-shrink: 1;
+  height: 32px;
+  padding: 0 6px;
+  box-sizing: border-box;
+}
+
+#prop-key,   #edge-prop-key   { flex: 2; }
+#prop-value, #edge-prop-value { flex: 3; }
+#prop-type,  #edge-prop-type  { flex: 2; }
+
+#properties-add-row button,
+.props-add-row button {
+  width: auto;
+  height: 32px;
+  padding: 0 10px;
+  margin-bottom: 0;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.prop-remove {
+  width: auto !important;
+  padding: 1px 6px !important;
+  margin-bottom: 0 !important;
+  font-size: 12px !important;
+  background: #fdd;
+  border-radius: 3px;
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.prop-remove:hover {
+  background: #f5aaaf;
+}
+
+/* ── Evidence log ───────────────────────────────────────────────────────────── */
+#evidence-log {
+  font-size: 12px;
+  line-height: 1.7;
+  font-family: var(--font-mono);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  padding: 8px;
+  min-height: 36px;
+  white-space: pre-wrap;
+}
+
+/* ── Hint / status text ─────────────────────────────────────────────────────── */
+.hint-text {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  font-style: italic;
+  font-weight: normal;
+}
+
+.hint-error {
+  color: #c0392b;
+  font-style: italic;
+}
+
+/* ── Ranked panels ──────────────────────────────────────────────────────────── */
+.rank-section { margin: 6px 0 10px; }
+.rank-section h5 {
+  margin: 4px 0;
+  font-size: 12px;
+  color: #333;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 3px;
+}
+
+.rank-row { display: flex; align-items: center; gap: 5px; margin-bottom: 3px; }
+.rank-name {
+  width: 110px;
+  flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--color-text-primary);
+}
+
+.rank-bar-bg {
+  flex: 1;
+  background: #e0e0e0;
+  height: 13px;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.rank-bar-fill {
+  height: 100%;
+  transition: width 0.3s ease-out;
+}
+
+.rank-bar-parent { background: var(--color-bar-parent); }
+.rank-bar-child  { background: var(--color-bar-child); }
+
+.rank-state {
+  width: 58px;
+  flex-shrink: 0;
+  text-align: right;
+  font-size: 10px;
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rank-pct {
+  width: 36px;
+  flex-shrink: 0;
+  text-align: right;
+  font-size: 10px;
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.rank-depth {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  margin: 4px 0 2px;
+  font-style: italic;
+}

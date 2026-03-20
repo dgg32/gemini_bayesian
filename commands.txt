@@ -1,0 +1,18 @@
+uvicorn main:app --reload
+
+click index.html
+
+
+
+
+#sync bayesian networks to central duckdb
+python sync.py b2c --all 
+
+
+
+
+#push local duckdb to MotherDuck/DuckLake
+python sync_ducklake.py push
+
+#pull data from MotherDuck/DuckLake to local duckdb
+python sync_ducklake.py pull --dst my_central.duckdb
