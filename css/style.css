@@ -218,6 +218,23 @@ button:active {
   margin-top: 4px;
 }
 
+/* ── Node section ───────────────────────────────────────────────────────────── */
+.node-section {
+  background: var(--color-edge-bg);
+  padding: 8px;
+  border-radius: var(--radius-md);
+  border: 1px solid #c2dcf0;
+  margin-bottom: 10px;
+}
+
+.node-section input {
+  margin-top: 6px;
+}
+
+.node-section button {
+  margin-top: 4px;
+}
+
 /* ── Label + color picker row ───────────────────────────────────────────────── */
 .label-row {
   display: flex;
@@ -264,6 +281,10 @@ button:active {
 }
 
 /* ── CPT table ──────────────────────────────────────────────────────────────── */
+#cpt-table-container {
+  overflow-x: auto;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;

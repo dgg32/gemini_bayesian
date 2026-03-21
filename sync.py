@@ -4,12 +4,12 @@ sync.py – Bidirectional sync between Central DuckDB and Bayesian project DBs.
 
 Central schema
 --------------
-• One node table per label, named  node_<label>  (e.g. node_symptom, node_disease).
+• One node table per label, named after the label itself (e.g. symptom, Disease).
   Unlabeled nodes go into the table "node".
   Columns: id VARCHAR PK, name VARCHAR, label VARCHAR,
            properties VARCHAR (JSON), bayesian_network VARCHAR[]
 
-• One edge table per label, named  edge_<label>  (e.g. edge_causes, edge_treats).
+• One edge table per label, named after the label itself (e.g. causes, treats).
   Unlabeled edges go into the table "edge".
   Columns: from_id VARCHAR, to_id VARCHAR, label VARCHAR,
            properties VARCHAR (JSON), bayesian_network VARCHAR[]
@@ -85,16 +85,16 @@ DEFAULT_STATES = ["Yes", "No"]
 # ── Naming helpers ─────────────────────────────────────────────────────────────
 
 def _safe(label: str) -> str:
-    s = re.sub(r"[^a-zA-Z0-9_]", "_", label).strip("_").lower()
+    s = re.sub(r"[^a-zA-Z0-9_]", "_", label).strip("_")
     return s or "general"
 
 
 def _label_table(label: str) -> str:
-    return f"node_{_safe(label)}" if label else "node"
+    return _safe(label) if label else "node"
 
 
 def _edge_table(label: str) -> str:
-    return f"edge_{_safe(label)}" if label else "edge"
+    return _safe(label) if label else "edge"
 
 
 # ── Central schema ─────────────────────────────────────────────────────────────
@@ -131,17 +131,29 @@ def _ensure_edge_table(conn: duckdb.DuckDBPyConnection, label: str) -> str:
 
 
 def _node_tables(conn: duckdb.DuckDBPyConnection) -> list[str]:
-    rows = conn.execute(
-        "SELECT table_name FROM information_schema.tables WHERE table_schema = 'main'"
-    ).fetchall()
-    return [r[0] for r in rows if r[0] == "node" or r[0].startswith("node_")]
+    """Tables that have a 'bayesian_network' column but NOT a 'from_id' column (node shape)."""
+    rows = conn.execute("""
+        SELECT DISTINCT c1.table_name
+        FROM information_schema.columns c1
+        WHERE c1.table_schema = 'main'
+          AND c1.column_name = 'bayesian_network'
+          AND c1.table_name NOT IN (
+              SELECT table_name FROM information_schema.columns
+              WHERE table_schema = 'main' AND column_name = 'from_id'
+          )
+    """).fetchall()
+    return [r[0] for r in rows]
 
 
 def _edge_tables(conn: duckdb.DuckDBPyConnection) -> list[str]:
-    rows = conn.execute(
-        "SELECT table_name FROM information_schema.tables WHERE table_schema = 'main'"
-    ).fetchall()
-    return [r[0] for r in rows if r[0] == "edge" or r[0].startswith("edge_")]
+    """Tables that have a 'from_id' column (edge shape)."""
+    rows = conn.execute("""
+        SELECT DISTINCT table_name
+        FROM information_schema.columns
+        WHERE table_schema = 'main'
+          AND column_name = 'from_id'
+    """).fetchall()
+    return [r[0] for r in rows]
 
 
 def _ensure_central_base(conn: duckdb.DuckDBPyConnection) -> None:

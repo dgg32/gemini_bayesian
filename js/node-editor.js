@@ -115,6 +115,46 @@ async function saveEdgeLabel() {
     clearEdgeDirty();
 }
 
+async function deleteEdge() {
+    if (!currentEdge) return;
+    const { from: fromId, to: toId } = currentEdge;
+    if (!confirm(`Delete edge "${fromId} → ${toId}"?`)) return;
+
+    // Remove from backend
+    await fetch(
+        `http://localhost:8000/edge?from_id=${encodeURIComponent(fromId)}&to_id=${encodeURIComponent(toId)}&project=${encodeURIComponent(currentProject)}`,
+        { method: 'DELETE' }
+    );
+
+    // Remove from vis-network
+    const edgeArr = edgesSet.get({ filter: e => e.from === fromId && e.to === toId });
+    edgeArr.forEach(e => edgesSet.remove(e.id));
+
+    // Downstream: update the child node (toId) — remove fromId from its parents, resize CPT
+    const child = globalNodeData[toId];
+    if (child && child.parents.includes(fromId)) {
+        const newParents = child.parents.filter(p => p !== fromId);
+        const newCols = newParents.length > 0
+            ? newParents.reduce((prod, p) => prod * (globalNodeData[p]?.states.length ?? 1), 1)
+            : 1;
+        const newCpt = child.states.map(() => Array(newCols).fill(0));
+        globalNodeData[toId] = { ...child, parents: newParents, cpt: newCpt };
+
+        await fetch(`http://localhost:8000/node?project=${encodeURIComponent(currentProject)}`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id: toId, states: child.states, parents: newParents, cpt: newCpt,
+                label: child.nodeLabel || '', properties: child.properties || {}
+            })
+        });
+        nodesSet.update({ id: toId, title: formatTooltip(globalNodeData[toId]) });
+    }
+
+    // Reset edge panel
+    currentEdge = null;
+    document.getElementById('edge-section').style.display = 'none';
+}
+
 async function addNewNode() {
     currentEdge = null;
     document.getElementById('edge-section').style.display = 'none';

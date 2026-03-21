@@ -48,9 +48,10 @@
             <div class="save-row">
                 <button onclick="saveEdgeLabel()" class="btn-success btn-action">Save Edge</button>
                 <span id="edge-dirty-badge" class="dirty-badge" style="display:none;">&#9679; Unsaved changes</span>
+                <button onclick="deleteEdge()" class="btn-danger btn-action" style="margin-left:auto;">🗑 Remove Edge</button>
             </div>
         </div>
-        <div id="node-section" style="display:none;">
+        <div id="node-section" class="node-section" style="display:none;">
             <h3 id="edit-title">Add / Edit Node</h3>
             <input id="n-id" placeholder="Node ID (e.g., COVID)">
             <input id="n-states" placeholder="States (e.g., Yes, No)" oninput="generateCPTTable()">

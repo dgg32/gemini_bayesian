@@ -386,6 +386,17 @@ def save_node(node: NodeData, project: str = Query(DEFAULT_PROJECT)):
     return {"status": "success"}
 
 
+@app.delete("/edge")
+def delete_edge(from_id: str, to_id: str, project: str = Query(DEFAULT_PROJECT)):
+    conn = _get_conn(project)
+    src = conn.execute("SELECT id FROM node WHERE name = ?", (from_id,)).fetchone()
+    tgt = conn.execute("SELECT id FROM node WHERE name = ?", (to_id,)).fetchone()
+    if not src or not tgt:
+        return {"status": "not found"}
+    conn.execute("DELETE FROM relation WHERE source = ? AND target = ?", (src[0], tgt[0]))
+    return {"status": "success"}
+
+
 @app.delete("/node/{node_id}")
 def delete_node(node_id: str, project: str = Query(DEFAULT_PROJECT)):
     conn = _get_conn(project)
