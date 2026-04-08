@@ -80,6 +80,7 @@ import duckdb
 PROJECTS_DIR   = Path("projects")
 CENTRAL_DB     = Path("central.duckdb")
 DEFAULT_STATES = ["Yes", "No"]
+PROPERTY_GRAPH_NAME = "bayesian_kg"
 
 
 # ── Naming helpers ─────────────────────────────────────────────────────────────
@@ -154,6 +155,112 @@ def _edge_tables(conn: duckdb.DuckDBPyConnection) -> list[str]:
           AND column_name = 'from_id'
     """).fetchall()
     return [r[0] for r in rows]
+
+
+def _quote_ident(name: str) -> str:
+    return '"' + name.replace('"', '""') + '"'
+
+
+def _edge_endpoint_table(
+    conn: duckdb.DuckDBPyConnection,
+    edge_table: str,
+    endpoint_col: str,
+    node_tables: list[str],
+) -> str | None:
+    counts: list[tuple[int, str]] = []
+    for node_table in node_tables:
+        try:
+            match_count = conn.execute(
+                f'''
+                SELECT COUNT(*)
+                FROM {_quote_ident(edge_table)} e
+                JOIN {_quote_ident(node_table)} n
+                  ON e.{endpoint_col} = n.id
+                '''
+            ).fetchone()[0]
+        except Exception:
+            match_count = 0
+        if match_count > 0:
+            counts.append((match_count, node_table))
+
+    if not counts:
+        return None
+
+    counts.sort(key=lambda item: (-item[0], item[1]))
+    return counts[0][1]
+
+
+def _refresh_property_graph(conn: duckdb.DuckDBPyConnection) -> None:
+    try:
+        conn.execute("INSTALL duckpgq FROM community")
+        conn.execute("LOAD duckpgq")
+    except Exception as exc:
+        print(
+            f"Warning: could not load DuckPGQ; property graph '{PROPERTY_GRAPH_NAME}' was not refreshed: {exc}",
+            file=sys.stderr,
+        )
+        return
+
+    node_tables = sorted(_node_tables(conn))
+    edge_tables = sorted(_edge_tables(conn))
+
+    if not node_tables or not edge_tables:
+        print(
+            f"Warning: skipped property graph refresh for '{PROPERTY_GRAPH_NAME}' because "
+            f"the central schema does not yet contain both vertex and edge tables.",
+            file=sys.stderr,
+        )
+        return
+
+    vertex_sql = ",\n    ".join(_quote_ident(tbl) for tbl in node_tables)
+    edge_defs: list[str] = []
+    skipped_edges: list[str] = []
+    for edge_table in edge_tables:
+        src_table = _edge_endpoint_table(conn, edge_table, "from_id", node_tables)
+        dst_table = _edge_endpoint_table(conn, edge_table, "to_id", node_tables)
+        if not src_table or not dst_table:
+            skipped_edges.append(edge_table)
+            continue
+        edge_defs.append(
+            f"{_quote_ident(edge_table)} SOURCE KEY ('from_id') REFERENCES {_quote_ident(src_table)} (id) "
+            f"DESTINATION KEY ('to_id') REFERENCES {_quote_ident(dst_table)} (id) LABEL {_quote_ident(edge_table)}"
+        )
+
+    if not edge_defs:
+        print(
+            f"Warning: skipped property graph refresh for '{PROPERTY_GRAPH_NAME}' because "
+            f"no edge tables could be mapped to vertex tables.",
+            file=sys.stderr,
+        )
+        return
+
+    if skipped_edges:
+        print(
+            f"Warning: skipped edge tables during property graph refresh for '{PROPERTY_GRAPH_NAME}': "
+            f"{', '.join(sorted(skipped_edges))}",
+            file=sys.stderr,
+        )
+
+    edge_sql = ",\n  ".join(edge_defs)
+
+    try:
+        conn.execute(f"DROP PROPERTY GRAPH IF EXISTS {_quote_ident(PROPERTY_GRAPH_NAME)}")
+        conn.execute(
+            f"""
+            CREATE PROPERTY GRAPH {_quote_ident(PROPERTY_GRAPH_NAME)}
+              VERTEX TABLES (
+                {vertex_sql}
+              )
+            EDGE TABLES (
+              {edge_sql}
+            )
+            """
+        )
+    except Exception as exc:
+        print(
+            f"Warning: failed to refresh property graph '{PROPERTY_GRAPH_NAME}': {exc}",
+            file=sys.stderr,
+        )
 
 
 def _ensure_central_base(conn: duckdb.DuckDBPyConnection) -> None:
@@ -895,6 +1002,9 @@ def main() -> None:
                     sync_c2b(proj, central, proj_d, prune=getattr(args, "prune", False))
                 except Exception as exc:
                     print(f"  [{proj}] ERROR: {exc}", file=sys.stderr)
+
+        if args.cmd in {"b2c", "c2b"}:
+            _refresh_property_graph(central)
 
     finally:
         central.close()

@@ -218,3 +218,4 @@ config.yaml
 .DS_Store
 
 to_neo4j
+.roomodes
