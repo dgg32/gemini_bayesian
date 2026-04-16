@@ -301,9 +301,11 @@ def _ensure_central_base(conn: duckdb.DuckDBPyConnection) -> None:
             source   VARCHAR NOT NULL,
             target   VARCHAR NOT NULL,
             position INTEGER NOT NULL DEFAULT 0,
+            label    VARCHAR DEFAULT '',
             PRIMARY KEY (project, source, target)
         )
     """)
+    conn.execute("ALTER TABLE relation ADD COLUMN IF NOT EXISTS label VARCHAR DEFAULT ''")
     conn.execute("""
         CREATE TABLE IF NOT EXISTS cpt (
             project     VARCHAR NOT NULL,
@@ -471,6 +473,61 @@ def sync_b2c(project: str, central: duckdb.DuckDBPyConnection,
         b.close()
 
     n_new = n_upd = e_new = e_upd = 0
+    current_node_keys = {name.lower() for name, _, _, _ in nodes}
+    current_edge_keys = {
+        (source.lower(), target.lower(), edge_lbl or "")
+        for source, target, edge_lbl, _, _ in edges
+    }
+
+    for etbl in _edge_tables(central):
+        try:
+            tagged_rows = central.execute(
+                f'SELECT from_id, to_id, label, bayesian_network FROM "{etbl}" '
+                'WHERE list_contains(bayesian_network, ?)',
+                (project,),
+            ).fetchall()
+        except Exception:
+            continue
+
+        for from_id, to_id, label, bayesian_network in tagged_rows:
+            if (from_id, to_id, label or "") in current_edge_keys:
+                continue
+            remaining_bn = [bn for bn in list(bayesian_network or []) if bn != project]
+            if remaining_bn:
+                central.execute(
+                    f'UPDATE "{etbl}" SET bayesian_network = ? WHERE from_id = ? AND to_id = ?',
+                    (remaining_bn, from_id, to_id),
+                )
+            else:
+                central.execute(
+                    f'DELETE FROM "{etbl}" WHERE from_id = ? AND to_id = ?',
+                    (from_id, to_id),
+                )
+
+    for ntbl in _node_tables(central):
+        try:
+            tagged_rows = central.execute(
+                f'SELECT id, bayesian_network FROM "{ntbl}" WHERE list_contains(bayesian_network, ?)',
+                (project,),
+            ).fetchall()
+        except Exception:
+            continue
+
+        for node_id, bayesian_network in tagged_rows:
+            if node_id in current_node_keys:
+                continue
+            remaining_bn = [bn for bn in list(bayesian_network or []) if bn != project]
+            if remaining_bn:
+                central.execute(
+                    f'UPDATE "{ntbl}" SET bayesian_network = ? WHERE id = ?',
+                    (remaining_bn, node_id),
+                )
+            else:
+                central.execute(f'DELETE FROM "{ntbl}" WHERE id = ?', (node_id,))
+
+    central.execute("DELETE FROM project_node WHERE project = ?", (project,))
+    central.execute("DELETE FROM relation WHERE project = ?", (project,))
+    central.execute("DELETE FROM cpt WHERE project = ?", (project,))
 
     # ── Node tables + project_node (states) ──────────────────────────────────
     for name, label, props_json, states_arr in nodes:
@@ -549,13 +606,13 @@ def sync_b2c(project: str, central: duckdb.DuckDBPyConnection,
             (project, src_key, tgt_key),
         ).fetchone():
             central.execute(
-                "UPDATE relation SET position = ? WHERE project = ? AND source = ? AND target = ?",
-                (position, project, src_key, tgt_key),
+                "UPDATE relation SET label = ?, position = ? WHERE project = ? AND source = ? AND target = ?",
+                (lbl_key, position, project, src_key, tgt_key),
             )
         else:
             central.execute(
-                "INSERT INTO relation (project, source, target, position) VALUES (?, ?, ?, ?)",
-                (project, src_key, tgt_key, position),
+                "INSERT INTO relation (project, source, target, position, label) VALUES (?, ?, ?, ?, ?)",
+                (project, src_key, tgt_key, position, lbl_key),
             )
 
     # ── CPT ───────────────────────────────────────────────────────────────────
@@ -1005,6 +1062,12 @@ def main() -> None:
 
         if args.cmd in {"b2c", "c2b"}:
             _refresh_property_graph(central)
+
+        if args.cmd == "b2c":
+            try:
+                central.execute("VACUUM")
+            except Exception as exc:
+                print(f"Warning: VACUUM failed: {exc}", file=sys.stderr)
 
     finally:
         central.close()
