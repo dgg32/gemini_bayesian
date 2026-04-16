@@ -1,0 +1,48 @@
+CREATE CONSTRAINT factor_name_unique IF NOT EXISTS
+FOR (n:Factor)
+REQUIRE n.name IS UNIQUE;
+
+CREATE CONSTRAINT disease_name_unique IF NOT EXISTS
+FOR (n:Disease)
+REQUIRE n.name IS UNIQUE;
+
+CREATE CONSTRAINT symptom_name_unique IF NOT EXISTS
+FOR (n:Symptom)
+REQUIRE n.name IS UNIQUE;
+
+
+LOAD CSV WITH HEADERS FROM 'file:///nodes/Factor.csv' AS row
+MERGE (n:Factor {name: row.name})
+SET n.id = toInteger(row.id),
+    n.states = row.states,
+    n.label = row.label,
+    n.properties_json = row.properties;
+
+LOAD CSV WITH HEADERS FROM 'file:///nodes/Disease.csv' AS row
+MERGE (n:Disease {name: row.name})
+SET n.id = toInteger(row.id),
+    n.states = row.states,
+    n.label = row.label,
+    n.properties_json = row.properties;
+
+LOAD CSV WITH HEADERS FROM 'file:///nodes/Symptom.csv' AS row
+MERGE (n:Symptom {name: row.name})
+SET n.id = toInteger(row.id),
+    n.states = row.states,
+    n.label = row.label,
+    n.properties_json = row.properties;
+
+
+LOAD CSV WITH HEADERS FROM 'file:///edges/CAUSES.csv' AS row
+MATCH (src {name: row.source})
+MATCH (dst {name: row.target})
+MERGE (src)-[r:CAUSES {position: toInteger(row.position)}]->(dst)
+SET r.label = row.label,
+    r.properties_json = row.properties;
+
+LOAD CSV WITH HEADERS FROM 'file:///edges/HAS_SYMPTOM.csv' AS row
+MATCH (src {name: row.source})
+MATCH (dst {name: row.target})
+MERGE (src)-[r:HAS_SYMPTOM {position: toInteger(row.position)}]->(dst)
+SET r.label = row.label,
+    r.properties_json = row.properties;

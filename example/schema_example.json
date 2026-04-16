@@ -1,0 +1,244 @@
+{
+  "catalogs": [
+    {
+      "name": "ddt",
+      "type": "duckdb",
+      "jdbc": {
+        "jdbcUri": "jdbc:duckdb:/home/share/central.duckdb",
+        "driverClass": "org.duckdb.DuckDBDriver",
+        "driverUrl": "https://repo1.maven.org/maven2/org/duckdb/duckdb_jdbc/1.4.1.0/duckdb_jdbc-1.4.1.0.jar"
+      }
+    }
+  ],
+  "graph": {
+    "vertices": [
+      {
+        "label": "Drug",
+        "oneToOne": {
+          "tableSource": {
+            "catalog": "ddt",
+            "schema": "main",
+            "table": "Drug"
+          },
+          "id": {
+            "fields": [
+              {
+                "type": "String",
+                "field": "drug_cui",
+                "alias": "ID"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "type": "String",
+              "field": "drug_cui",
+              "alias": "drug_cui"
+            },
+            {
+              "type": "String",
+              "field": "name",
+              "alias": "name"
+            }
+          ]
+        },
+        "cacheConfig": {}
+      },
+      {
+        "label": "Disorder",
+        "oneToOne": {
+          "tableSource": {
+            "catalog": "ddt",
+            "schema": "main",
+            "table": "Disorder"
+          },
+          "id": {
+            "fields": [
+              {
+                "type": "String",
+                "field": "disorder_cui",
+                "alias": "ID"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "type": "String",
+              "field": "disorder_cui",
+              "alias": "disorder_cui"
+            },
+            {
+              "type": "String",
+              "field": "name",
+              "alias": "name"
+            },
+            {
+              "type": "String",
+              "field": "definition",
+              "alias": "definition"
+            }
+          ]
+        },
+        "cacheConfig": {}
+      },
+      {
+        "label": "MOA",
+        "oneToOne": {
+          "tableSource": {
+            "catalog": "ddt",
+            "schema": "main",
+            "table": "MOA"
+          },
+          "id": {
+            "fields": [
+              {
+                "type": "String",
+                "field": "moa_id",
+                "alias": "ID"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "type": "String",
+              "field": "moa_id",
+              "alias": "moa_id"
+            },
+            {
+              "type": "String",
+              "field": "name",
+              "alias": "name"
+            }
+          ]
+        },
+        "cacheConfig": {}
+      },
+      {
+        "label": "Trial_view",
+        "oneToOne": {
+          "tableSource": {
+            "catalog": "ddt",
+            "schema": "main",
+            "table": "Trial_view"
+          },
+          "id": {
+            "fields": [
+              {
+                "type": "STRING",
+                "field": "PostingID",
+                "alias": "puppy_id_PostingID"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "type": "STRING",
+              "field": "PostingID",
+              "alias": "PostingID"
+            },
+            {
+              "type": "STRING",
+              "field": "Sponsor",
+              "alias": "Sponsor"
+            },
+            {
+              "type": "STRING",
+              "field": "StudyTitle",
+              "alias": "StudyTitle"
+            },
+            {
+              "type": "STRING",
+              "field": "Disorder",
+              "alias": "Disorder"
+            },
+            {
+              "type": "STRING",
+              "field": "Phase",
+              "alias": "Phase"
+            },
+            {
+              "type": "STRING",
+              "field": "LinkToSponsorStudyRegistry",
+              "alias": "LinkToSponsorStudyRegistry"
+            },
+            {
+              "type": "STRING",
+              "field": "LinkToClinicalTrials",
+              "alias": "LinkToClinicalTrials"
+            },
+            {
+              "type": "STRING",
+              "field": "drug_cui_str",
+              "alias": "drug_cui"
+            },
+            {
+              "type": "STRING",
+              "field": "drug_names_str",
+              "alias": "drug_names"
+            }
+          ]
+        }
+      }
+    ],
+    "edges": [
+      {
+        "label": "MAY_TREAT",
+        "fromVertex": "Drug",
+        "toVertex": "Disorder",
+        "tableSource": {
+          "catalog": "ddt",
+          "schema": "main",
+          "table": "DrugDisorder"
+        },
+        "fromId": {
+          "fields": [
+            {
+              "type": "String",
+              "field": "drug_cui",
+              "alias": "drug_cui"
+            }
+          ]
+        },
+        "toId": {
+          "fields": [
+            {
+              "type": "String",
+              "field": "disorder_cui",
+              "alias": "disorder_cui"
+            }
+          ]
+        },
+        "cacheConfig": {}
+      },
+      {
+        "label": "HAS_MOA",
+        "fromVertex": "Drug",
+        "toVertex": "MOA",
+        "tableSource": {
+          "catalog": "ddt",
+          "schema": "main",
+          "table": "DrugMOA"
+        },
+        "fromId": {
+          "fields": [
+            {
+              "type": "String",
+              "field": "drug_cui",
+              "alias": "drug_cui"
+            }
+          ]
+        },
+        "toId": {
+          "fields": [
+            {
+              "type": "String",
+              "field": "moa_id",
+              "alias": "moa_id"
+            }
+          ]
+        },
+        "cacheConfig": {}
+      }
+    ]
+  }
+}

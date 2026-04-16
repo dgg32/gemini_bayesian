@@ -8,10 +8,10 @@ Edges with the same label are written to <label>.csv (edge file) inside an
 Unlabelled nodes/edges go to _unlabeled.csv in their respective locations.
 
 Usage:
-    python to_neo4j.py <project_name> <output_folder>
+    python neo4j_exporter.py <project_name> <output_folder>
 
 Example:
-    python to_neo4j.py default ./neo4j_export
+    python neo4j_exporter.py default ./neo4j_export
 """
 
 import csv

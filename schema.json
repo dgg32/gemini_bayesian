@@ -1,0 +1,410 @@
+{
+  "catalogs": [
+    {
+      "name": "ddt",
+      "type": "duckdb",
+      "jdbc": {
+        "jdbcUri": "jdbc:duckdb:/home/share/central.duckdb",
+        "driverClass": "org.duckdb.DuckDBDriver",
+        "driverUrl": "https://repo1.maven.org/maven2/org/duckdb/duckdb_jdbc/1.4.1.0/duckdb_jdbc-1.4.1.0.jar"
+      }
+    }
+  ],
+  "graph": {
+    "vertices": [
+      {
+        "label": "Disease",
+        "oneToOne": {
+          "tableSource": {
+            "catalog": "ddt",
+            "schema": "main",
+            "table": "Disease"
+          },
+          "id": {
+            "fields": [
+              {
+                "type": "String",
+                "field": "id",
+                "alias": "ID"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "type": "String",
+              "field": "id",
+              "alias": "id"
+            },
+            {
+              "type": "String",
+              "field": "name",
+              "alias": "name"
+            },
+            {
+              "type": "String",
+              "field": "label",
+              "alias": "label"
+            },
+            {
+              "type": "String",
+              "field": "properties",
+              "alias": "properties"
+            },
+            {
+              "type": "String",
+              "field": "CAST(bayesian_network AS VARCHAR)",
+              "alias": "bayesian_network"
+            }
+          ]
+        },
+        "cacheConfig": {}
+      },
+      {
+        "label": "Factor",
+        "oneToOne": {
+          "tableSource": {
+            "catalog": "ddt",
+            "schema": "main",
+            "table": "Factor"
+          },
+          "id": {
+            "fields": [
+              {
+                "type": "String",
+                "field": "id",
+                "alias": "ID"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "type": "String",
+              "field": "id",
+              "alias": "id"
+            },
+            {
+              "type": "String",
+              "field": "name",
+              "alias": "name"
+            },
+            {
+              "type": "String",
+              "field": "label",
+              "alias": "label"
+            },
+            {
+              "type": "String",
+              "field": "properties",
+              "alias": "properties"
+            },
+            {
+              "type": "String",
+              "field": "CAST(bayesian_network AS VARCHAR)",
+              "alias": "bayesian_network"
+            }
+          ]
+        },
+        "cacheConfig": {}
+      },
+      {
+        "label": "Symptom",
+        "oneToOne": {
+          "tableSource": {
+            "catalog": "ddt",
+            "schema": "main",
+            "table": "Symptom"
+          },
+          "id": {
+            "fields": [
+              {
+                "type": "String",
+                "field": "id",
+                "alias": "ID"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "type": "String",
+              "field": "id",
+              "alias": "id"
+            },
+            {
+              "type": "String",
+              "field": "name",
+              "alias": "name"
+            },
+            {
+              "type": "String",
+              "field": "label",
+              "alias": "label"
+            },
+            {
+              "type": "String",
+              "field": "properties",
+              "alias": "properties"
+            },
+            {
+              "type": "String",
+              "field": "CAST(bayesian_network AS VARCHAR)",
+              "alias": "bayesian_network"
+            }
+          ]
+        },
+        "cacheConfig": {}
+      },
+      {
+        "label": "node",
+        "oneToOne": {
+          "tableSource": {
+            "catalog": "ddt",
+            "schema": "main",
+            "table": "node"
+          },
+          "id": {
+            "fields": [
+              {
+                "type": "String",
+                "field": "id",
+                "alias": "ID"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "type": "String",
+              "field": "id",
+              "alias": "id"
+            },
+            {
+              "type": "String",
+              "field": "name",
+              "alias": "name"
+            },
+            {
+              "type": "String",
+              "field": "label",
+              "alias": "label"
+            },
+            {
+              "type": "String",
+              "field": "properties",
+              "alias": "properties"
+            },
+            {
+              "type": "String",
+              "field": "CAST(bayesian_network AS VARCHAR)",
+              "alias": "bayesian_network"
+            }
+          ]
+        },
+        "cacheConfig": {}
+      }
+    ],
+    "edges": [
+      {
+        "label": "CAUSES",
+        "fromVertex": "Disease",
+        "toVertex": "Disease",
+        "tableSource": {
+          "catalog": "ddt",
+          "schema": "main",
+          "table": "CAUSES"
+        },
+        "fromId": {
+          "fields": [
+            {
+              "type": "String",
+              "field": "from_id",
+              "alias": "from_id"
+            }
+          ]
+        },
+        "toId": {
+          "fields": [
+            {
+              "type": "String",
+              "field": "to_id",
+              "alias": "to_id"
+            }
+          ]
+        },
+        "cacheConfig": {}
+      },
+      {
+        "label": "COOCCURS",
+        "fromVertex": "Disease",
+        "toVertex": "Disease",
+        "tableSource": {
+          "catalog": "ddt",
+          "schema": "main",
+          "table": "COOCCURS"
+        },
+        "fromId": {
+          "fields": [
+            {
+              "type": "String",
+              "field": "from_id",
+              "alias": "from_id"
+            }
+          ]
+        },
+        "toId": {
+          "fields": [
+            {
+              "type": "String",
+              "field": "to_id",
+              "alias": "to_id"
+            }
+          ]
+        },
+        "cacheConfig": {}
+      },
+      {
+        "label": "DISEASE_LEADS_TO_FACTOR",
+        "fromVertex": "Disease",
+        "toVertex": "Disease",
+        "tableSource": {
+          "catalog": "ddt",
+          "schema": "main",
+          "table": "DISEASE_LEADS_TO_FACTOR"
+        },
+        "fromId": {
+          "fields": [
+            {
+              "type": "String",
+              "field": "from_id",
+              "alias": "from_id"
+            }
+          ]
+        },
+        "toId": {
+          "fields": [
+            {
+              "type": "String",
+              "field": "to_id",
+              "alias": "to_id"
+            }
+          ]
+        },
+        "cacheConfig": {}
+      },
+      {
+        "label": "HAS_SYMPTOM",
+        "fromVertex": "Disease",
+        "toVertex": "Disease",
+        "tableSource": {
+          "catalog": "ddt",
+          "schema": "main",
+          "table": "HAS_SYMPTOM"
+        },
+        "fromId": {
+          "fields": [
+            {
+              "type": "String",
+              "field": "from_id",
+              "alias": "from_id"
+            }
+          ]
+        },
+        "toId": {
+          "fields": [
+            {
+              "type": "String",
+              "field": "to_id",
+              "alias": "to_id"
+            }
+          ]
+        },
+        "cacheConfig": {}
+      },
+      {
+        "label": "LEADS_TO_FACTOR",
+        "fromVertex": "Disease",
+        "toVertex": "Disease",
+        "tableSource": {
+          "catalog": "ddt",
+          "schema": "main",
+          "table": "LEADS_TO_FACTOR"
+        },
+        "fromId": {
+          "fields": [
+            {
+              "type": "String",
+              "field": "from_id",
+              "alias": "from_id"
+            }
+          ]
+        },
+        "toId": {
+          "fields": [
+            {
+              "type": "String",
+              "field": "to_id",
+              "alias": "to_id"
+            }
+          ]
+        },
+        "cacheConfig": {}
+      },
+      {
+        "label": "SYMPTOM_COOCCURS",
+        "fromVertex": "Disease",
+        "toVertex": "Disease",
+        "tableSource": {
+          "catalog": "ddt",
+          "schema": "main",
+          "table": "SYMPTOM_COOCCURS"
+        },
+        "fromId": {
+          "fields": [
+            {
+              "type": "String",
+              "field": "from_id",
+              "alias": "from_id"
+            }
+          ]
+        },
+        "toId": {
+          "fields": [
+            {
+              "type": "String",
+              "field": "to_id",
+              "alias": "to_id"
+            }
+          ]
+        },
+        "cacheConfig": {}
+      },
+      {
+        "label": "edge",
+        "fromVertex": "Disease",
+        "toVertex": "Disease",
+        "tableSource": {
+          "catalog": "ddt",
+          "schema": "main",
+          "table": "edge"
+        },
+        "fromId": {
+          "fields": [
+            {
+              "type": "String",
+              "field": "from_id",
+              "alias": "from_id"
+            }
+          ]
+        },
+        "toId": {
+          "fields": [
+            {
+              "type": "String",
+              "field": "to_id",
+              "alias": "to_id"
+            }
+          ]
+        },
+        "cacheConfig": {}
+      }
+    ]
+  }
+}

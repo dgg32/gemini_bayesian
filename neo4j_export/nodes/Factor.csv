@@ -1,0 +1,3 @@
+id,name,states,label,properties
+1,Travel,"['Asia', 'Europe', 'USA']",Factor,"{""description"": {""value"": ""Where did the patient travel to?"", ""type"": ""VARCHAR""}, ""cui"": {""value"": ""C0040802"", ""type"": ""VARCHAR""}}"
+2,Smoking,"['present', 'absent']",Factor,"{""description"": {""value"": ""Did the patient have a smoking history?"", ""type"": ""VARCHAR""}, ""cui"": {""value"": ""C0037369"", ""type"": ""VARCHAR""}}"

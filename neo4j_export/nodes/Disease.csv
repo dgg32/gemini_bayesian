@@ -1,0 +1,4 @@
+id,name,states,label,properties
+3,COVID,"['Yes', 'No']",Disease,"{""description"": {""value"": ""Did the patient have COVID?"", ""type"": ""VARCHAR""}, ""cui"": {""value"": ""C5203670"", ""type"": ""VARCHAR""}}"
+4,Tuberculosis,"['Yes', 'No']",Disease,"{""cui"": {""value"": ""C0041296"", ""type"": ""VARCHAR""}}"
+6,Lung Cancer,"['Yes', 'No']",Disease,{}

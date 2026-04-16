@@ -16,3 +16,8 @@ python sync_ducklake.py push
 
 #pull data from MotherDuck/DuckLake to local duckdb
 python sync_ducklake.py pull --dst my_central.duckdb
+
+
+
+#output a PuppyGraph schema.json from central.duckdb
+python puppygraph_schema_exporter.py schema.json

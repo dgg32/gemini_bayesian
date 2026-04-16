@@ -1,0 +1,7 @@
+source,target,position,label,properties
+Travel,COVID,0,CAUSES,"{""source"": {""value"": ""hypothetical"", ""type"": ""VARCHAR""}}"
+Smoking,COVID,1,CAUSES,{}
+Travel,Lung Cancer,0,CAUSES,"{""source"": {""value"": ""hypothetical"", ""type"": ""VARCHAR""}}"
+Smoking,Lung Cancer,1,CAUSES,{}
+Travel,Tuberculosis,0,CAUSES,{}
+Smoking,Tuberculosis,1,CAUSES,{}

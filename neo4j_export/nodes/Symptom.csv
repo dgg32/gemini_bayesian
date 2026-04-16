@@ -1,0 +1,2 @@
+id,name,states,label,properties
+5,Fatigue,"['Yes', 'No']",Symptom,{}
