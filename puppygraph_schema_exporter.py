@@ -30,7 +30,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-EXCLUDED_TABLES = {"cpt", "label", "project_node", "relation"}
+EXCLUDED_TABLES = {"cpt", "label", "project_node", "relation", "node", "edge"}
 DEFAULT_TEMPLATE = Path("example/schema_example.json")
 DEFAULT_DB = Path("central.duckdb")
 DEFAULT_CATALOG = "ddt"
@@ -96,7 +96,7 @@ def _is_edge_table(columns: list[dict[str, str]]) -> bool:
     return "from_id" in names and "to_id" in names
 
 
-def _needs_string_cast(duckdb_type: str) -> bool:
+def _is_unsupported_puppygraph_type(duckdb_type: str) -> bool:
     normalized = duckdb_type.upper()
     return "[]" in normalized or normalized == "JSON"
 
@@ -104,8 +104,6 @@ def _needs_string_cast(duckdb_type: str) -> bool:
 
 def _puppygraph_type(duckdb_type: str) -> str:
     normalized = duckdb_type.upper()
-    if _needs_string_cast(normalized):
-        return "String"
     if any(token in normalized for token in ["BOOL"]):
         return "Boolean"
     if any(token in normalized for token in ["TINYINT", "SMALLINT", "INTEGER", "BIGINT", "HUGEINT", "UBIGINT"]):
@@ -113,13 +111,6 @@ def _puppygraph_type(duckdb_type: str) -> str:
     if any(token in normalized for token in ["DECIMAL", "DOUBLE", "FLOAT", "REAL"]):
         return "Double"
     return "String"
-
-
-
-def _attribute_field(column_name: str, duckdb_type: str) -> str:
-    if _needs_string_cast(duckdb_type):
-        return f"CAST({column_name} AS VARCHAR)"
-    return column_name
 
 
 def _build_vertex(table_name: str, columns: list[dict[str, str]], catalog: str, schema: str) -> dict[str, Any]:
@@ -131,10 +122,11 @@ def _build_vertex(table_name: str, columns: list[dict[str, str]], catalog: str, 
     attributes = [
         {
             "type": _puppygraph_type(col["data_type"]),
-            "field": _attribute_field(col["column_name"], col["data_type"]),
+            "field": col["column_name"],
             "alias": col["column_name"],
         }
         for col in columns
+        if not _is_unsupported_puppygraph_type(col["data_type"])
     ]
 
     return {
@@ -160,7 +152,43 @@ def _build_vertex(table_name: str, columns: list[dict[str, str]], catalog: str, 
     }
 
 
+def _quote_ident(name: str) -> str:
+    return '"' + name.replace('"', '""') + '"'
+
+
+
+def _edge_endpoint_table(
+    db_path: Path,
+    edge_table: str,
+    endpoint_col: str,
+    vertex_tables: list[str],
+) -> str | None:
+    counts: list[tuple[int, str]] = []
+    for vertex_table in vertex_tables:
+        sql = f'''
+        SELECT COUNT(*) AS match_count
+        FROM {_quote_ident(edge_table)} e
+        JOIN {_quote_ident(vertex_table)} v
+          ON e.{_quote_ident(endpoint_col)} = v.id
+        '''
+        try:
+            rows = _run_duckdb_query(db_path, sql)
+            match_count = int(rows[0]["match_count"]) if rows else 0
+        except Exception:
+            match_count = 0
+        if match_count > 0:
+            counts.append((match_count, vertex_table))
+
+    if not counts:
+        return None
+
+    counts.sort(key=lambda item: (-item[0], item[1]))
+    return counts[0][1]
+
+
+
 def _build_edge(
+    db_path: Path,
     table_name: str,
     columns: list[dict[str, str]],
     vertex_tables: list[str],
@@ -171,12 +199,12 @@ def _build_edge(
     if "from_id" not in names or "to_id" not in names:
         raise ValueError(f"Edge table '{table_name}' must contain 'from_id' and 'to_id'")
 
-    if len(vertex_tables) == 1:
-        from_vertex = vertex_tables[0]
-        to_vertex = vertex_tables[0]
-    else:
-        from_vertex = vertex_tables[0] if vertex_tables else table_name
-        to_vertex = vertex_tables[0] if vertex_tables else table_name
+    from_vertex = _edge_endpoint_table(db_path, table_name, "from_id", vertex_tables)
+    to_vertex = _edge_endpoint_table(db_path, table_name, "to_id", vertex_tables)
+    if not from_vertex or not to_vertex:
+        raise ValueError(
+            f"Edge table '{table_name}' could not be mapped to vertex tables from its from_id/to_id values"
+        )
 
     from_col = next(col for col in columns if col["column_name"] == "from_id")
     to_col = next(col for col in columns if col["column_name"] == "to_id")
@@ -232,7 +260,7 @@ def build_graph(db_path: Path, catalog: str, schema: str) -> dict[str, Any]:
         for table_name in vertex_tables
     ]
     edges = [
-        _build_edge(table_name, filtered[table_name], vertex_tables, catalog, schema)
+        _build_edge(db_path, table_name, filtered[table_name], vertex_tables, catalog, schema)
         for table_name in edge_tables
     ]
 
