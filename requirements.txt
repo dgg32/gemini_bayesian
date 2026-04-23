@@ -42,7 +42,7 @@ ptyprocess==0.7.0
 pure-eval==0.2.3
 pydantic==2.12.5
 pydantic-core==2.41.5
-pygments==2.19.2
+pygments==2.20.0
 pyro-api==0.1.2
 pyro-ppl==1.9.1
 python-dateutil==2.9.0.post0
