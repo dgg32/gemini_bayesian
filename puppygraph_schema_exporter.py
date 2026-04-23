@@ -13,13 +13,15 @@ Included tables:
 Excluded tables:
 - [`cpt`](main.py:62)
 - [`label`](main.py:71)
-- [`project_node`](sync.py)
+- [`project_node`](sync.py:291)
 - [`relation`](main.py:51)
+- [`node`](sync.py:267)
+- [`edge`](sync.py:276)
 
 Assumptions:
 - vertex tables expose an [`id`](neo4j_exporter.py:53) column
 - edge tables expose [`from_id`](sync.py:150) and [`to_id`](sync.py:150) columns
-- all remaining columns are exported as PuppyGraph attributes
+- all remaining supported columns except [`properties`](main.py:45) are exported as PuppyGraph attributes
 """
 
 from __future__ import annotations
@@ -126,7 +128,8 @@ def _build_vertex(table_name: str, columns: list[dict[str, str]], catalog: str, 
             "alias": col["column_name"],
         }
         for col in columns
-        if not _is_unsupported_puppygraph_type(col["data_type"])
+        if col["column_name"] not in {"id", "label", "properties", "bayesian_network"}
+        and not _is_unsupported_puppygraph_type(col["data_type"])
     ]
 
     return {

@@ -353,6 +353,15 @@ def save_node(node: NodeData, project: str = Query(DEFAULT_PROJECT)):
             (node.id, node.states, node.label, json.dumps(node.properties)),
         ).fetchone()[0]
 
+    # Preserve edge labels and properties before wiping parent relations — they
+    # are set independently via POST /edge and must survive a node save.
+    existing_edge_data: dict[int, tuple[str, str]] = {
+        src: (lbl or "", props or "{}")
+        for src, lbl, props in conn.execute(
+            "SELECT source, label, properties FROM relation WHERE target = ?",
+            (node_int_id,),
+        ).fetchall()
+    }
     conn.execute("DELETE FROM relation WHERE target = ?", (node_int_id,))
     if node.parents:
         placeholders = ", ".join("?" * len(node.parents))
@@ -364,9 +373,15 @@ def save_node(node: NodeData, project: str = Query(DEFAULT_PROJECT)):
             ).fetchall()
         }
         conn.executemany(
-            "INSERT INTO relation (source, target, position) VALUES (?, ?, ?)",
+            "INSERT INTO relation (source, target, position, label, properties) VALUES (?, ?, ?, ?, ?)",
             [
-                (parent_id_map[p], node_int_id, pos)
+                (
+                    parent_id_map[p],
+                    node_int_id,
+                    pos,
+                    existing_edge_data.get(parent_id_map[p], ("", "{}"))[0],
+                    existing_edge_data.get(parent_id_map[p], ("", "{}"))[1],
+                )
                 for pos, p in enumerate(node.parents)
                 if p in parent_id_map
             ],
