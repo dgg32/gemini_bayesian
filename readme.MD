@@ -1,6 +1,6 @@
 # Bayesian Network Editor
 
-A browser-based visual editor for building, editing, and querying **Bayesian networks**. Draw nodes and edges interactively, fill in Conditional Probability Tables (CPTs), run Variable Elimination inference, and export your networks to Neo4j or PuppyGraph. It is described in my article [DuckBay: The Bayesian Knowledge Graph App](https://pgmpy.org/).
+A browser-based visual editor for building, editing, and querying **Bayesian networks**. Draw nodes and edges interactively, fill in Conditional Probability Tables (CPTs), run Variable Elimination inference, and export your networks to Neo4j or PuppyGraph. It is described in my article [DuckBay: The Bayesian Knowledge Graph App](https://medium.com/@dgg32/duckbay-the-bayesian-knowledge-graph-app-398a152879f0).
 
 
 ## Features
