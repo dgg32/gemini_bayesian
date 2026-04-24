@@ -26,6 +26,8 @@ A browser-based visual editor for building, editing, and querying **Bayesian net
 | Frontend | Vanilla HTML/CSS/JS |
 | Graph rendering | vis-network |
 
+DuckGraphViz is available in this [repo](https://github.com/dgg32/nvl_duckdb_public).
+
 ## Quick Start
 
 ### 1. Install dependencies
