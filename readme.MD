@@ -46,7 +46,7 @@ uvicorn main:app --reload
 
 Open `index.html` directly in your browser (no build step needed), or serve it from any static file server.
 
-> The API defaults to `http://localhost:8000`. If you run it on a different host or port, update the `API` constant at the top of `js/app.js`.
+> The API defaults to `http://localhost:8000`. If you run it on a different host or port, replace every occurrence of `http://localhost:8000` across `js/graph.js`, `js/node-editor.js`, `js/projects.js`, and `js/inference.js`.
 
 ## Usage
 
