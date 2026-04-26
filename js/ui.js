@@ -66,7 +66,9 @@ network.on("click", function (params) {
         const nodeData = globalNodeData[nodeId];
 
         document.getElementById('edit-title').textContent = 'Add / Edit Node';
-        document.getElementById('n-id').value = nodeId;
+        const nIdField = document.getElementById('n-id');
+        nIdField.value = nodeId;
+        nIdField.readOnly = true;
         document.getElementById('n-states').value = nodeData.states.join(', ');
         document.getElementById('n-parents').value = nodeData.parents.join(', ');
         populateLabelFields(nodeData.nodeLabel);

@@ -72,6 +72,7 @@ Notes
 """
 
 import argparse
+import hashlib
 import re
 import sys
 from pathlib import Path
@@ -88,7 +89,8 @@ PROPERTY_GRAPH_NAME = "bayesian_kg"
 
 def _safe(label: str) -> str:
     s = re.sub(r"[^a-zA-Z0-9_]", "_", label).strip("_")
-    return s or "general"
+    h = hashlib.sha256(label.encode()).hexdigest()[:8]
+    return (s or "general") + "_" + h
 
 
 def _label_table(label: str) -> str:

@@ -186,7 +186,9 @@ async function addNewNode() {
 
     // Load the new node into the editor panel
     document.getElementById('edit-title').textContent = 'Add / Edit Node';
-    document.getElementById('n-id').value = id;
+    const nIdField = document.getElementById('n-id');
+    nIdField.value = id;
+    nIdField.readOnly = false;
     document.getElementById('n-states').value = states.join(', ');
     document.getElementById('n-parents').value = '';
     populateLabelFields('');
@@ -347,7 +349,9 @@ async function deleteNode() {
     delete globalNodeData[nodeId];
 
     // Reset panel
-    document.getElementById('n-id').value = '';
+    const nIdField = document.getElementById('n-id');
+    nIdField.value = '';
+    nIdField.readOnly = false;
     document.getElementById('n-states').value = '';
     document.getElementById('n-parents').value = '';
     document.getElementById('cpt-table-container').innerHTML = '<i>Node deleted.</i>';
