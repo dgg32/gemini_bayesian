@@ -23,7 +23,8 @@ Central schema
   Columns: project VARCHAR, node_name VARCHAR (lowercase), states VARCHAR[]
 
 • relation table: per-project parent ordering (needed to reconstruct CPT columns).
-  Columns: project VARCHAR, source VARCHAR, target VARCHAR, position INTEGER
+  Columns: project VARCHAR, source VARCHAR, target VARCHAR, position INTEGER,
+           label VARCHAR, properties VARCHAR (JSON)
 
 • cpt table: per-project conditional probability values.
   Columns: project VARCHAR, node_name VARCHAR (lowercase),
@@ -155,6 +156,47 @@ def _edge_tables(conn: duckdb.DuckDBPyConnection) -> list[str]:
           AND column_name = 'from_id'
     """).fetchall()
     return [r[0] for r in rows]
+
+
+def _project_edge_metadata(
+    conn: duckdb.DuckDBPyConnection,
+    project: str,
+) -> dict[tuple[str, str], tuple[str, str]]:
+    metadata: dict[tuple[str, str], tuple[str, str]] = {}
+    for etbl in _edge_tables(conn):
+        try:
+            rows = conn.execute(
+                f'SELECT from_id, to_id, label, properties FROM "{etbl}" '
+                'WHERE list_contains(bayesian_network, ?)',
+                (project,),
+            ).fetchall()
+        except Exception:
+            try:
+                raw_rows = conn.execute(
+                    f'SELECT from_id, to_id, label FROM "{etbl}" '
+                    'WHERE list_contains(bayesian_network, ?)',
+                    (project,),
+                ).fetchall()
+            except Exception:
+                continue
+            rows = [(source, target, label, "{}") for source, target, label in raw_rows]
+
+        for source, target, label, properties in rows:
+            key = (source, target)
+            lbl_key = label or ""
+            props_json = properties or "{}"
+            prev = metadata.get(key)
+            if not prev:
+                metadata[key] = (lbl_key, props_json)
+                continue
+
+            prev_label, prev_props = prev
+            metadata[key] = (
+                prev_label or lbl_key,
+                prev_props if prev_props not in {"", "{}"} else props_json,
+            )
+
+    return metadata
 
 
 def _quote_ident(name: str) -> str:
@@ -302,10 +344,12 @@ def _ensure_central_base(conn: duckdb.DuckDBPyConnection) -> None:
             target   VARCHAR NOT NULL,
             position INTEGER NOT NULL DEFAULT 0,
             label    VARCHAR DEFAULT '',
+            properties VARCHAR DEFAULT '{}',
             PRIMARY KEY (project, source, target)
         )
     """)
     conn.execute("ALTER TABLE relation ADD COLUMN IF NOT EXISTS label VARCHAR DEFAULT ''")
+    conn.execute("ALTER TABLE relation ADD COLUMN IF NOT EXISTS properties VARCHAR DEFAULT '{}' ")
     conn.execute("""
         CREATE TABLE IF NOT EXISTS cpt (
             project     VARCHAR NOT NULL,
@@ -473,7 +517,10 @@ def sync_b2c(project: str, central: duckdb.DuckDBPyConnection,
         b.close()
 
     n_new = n_upd = e_new = e_upd = 0
-    current_node_keys = {name.lower() for name, _, _, _ in nodes}
+    current_node_tables = {
+        name.lower(): _label_table(label or "")
+        for name, label, _, _ in nodes
+    }
     current_edge_keys = {
         (source.lower(), target.lower(), edge_lbl or "")
         for source, target, edge_lbl, _, _ in edges
@@ -514,7 +561,7 @@ def sync_b2c(project: str, central: duckdb.DuckDBPyConnection,
             continue
 
         for node_id, bayesian_network in tagged_rows:
-            if node_id in current_node_keys:
+            if current_node_tables.get(node_id) == ntbl:
                 continue
             remaining_bn = [bn for bn in list(bayesian_network or []) if bn != project]
             if remaining_bn:
@@ -606,13 +653,15 @@ def sync_b2c(project: str, central: duckdb.DuckDBPyConnection,
             (project, src_key, tgt_key),
         ).fetchone():
             central.execute(
-                "UPDATE relation SET label = ?, position = ? WHERE project = ? AND source = ? AND target = ?",
-                (lbl_key, position, project, src_key, tgt_key),
+                "UPDATE relation SET label = ?, position = ?, properties = ? "
+                "WHERE project = ? AND source = ? AND target = ?",
+                (lbl_key, position, props_json, project, src_key, tgt_key),
             )
         else:
             central.execute(
-                "INSERT INTO relation (project, source, target, position, label) VALUES (?, ?, ?, ?, ?)",
-                (project, src_key, tgt_key, position, lbl_key),
+                "INSERT INTO relation (project, source, target, position, label, properties) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (project, src_key, tgt_key, position, lbl_key, props_json),
             )
 
     # ── CPT ───────────────────────────────────────────────────────────────────
@@ -711,13 +760,55 @@ def sync_c2b(project: str, central: duckdb.DuckDBPyConnection,
                     n_new += 1
 
         # ── 2. Upsert relations from Central relation table (correct position) ─
-        central_relation_rows = central.execute(
-            "SELECT source, target, position FROM relation WHERE project = ?",
-            (project,),
-        ).fetchall()
+        edge_metadata = _project_edge_metadata(central, project)
+
+        try:
+            central_relation_rows = central.execute(
+                "SELECT source, target, position, label, properties FROM relation WHERE project = ?",
+                (project,),
+            ).fetchall()
+        except Exception:
+            raw_relation_rows = central.execute(
+                "SELECT source, target, position, label FROM relation WHERE project = ?",
+                (project,),
+            ).fetchall()
+            central_relation_rows = [
+                (source, target, position, edge_lbl, "{}")
+                for source, target, position, edge_lbl in raw_relation_rows
+            ]
         central_edges: set[tuple[str, str]] = set()
 
-        for source, target, position in central_relation_rows:
+        for source, target, position, edge_lbl, edge_props_json in central_relation_rows:
+            central_edges.add((source, target))
+            s = b.execute("SELECT id FROM node WHERE LOWER(name) = ?", (source,)).fetchone()
+            t = b.execute("SELECT id FROM node WHERE LOWER(name) = ?", (target,)).fetchone()
+            if not s or not t:
+                continue
+            fallback_label, fallback_props = edge_metadata.get((source, target), ("", "{}"))
+            lbl_key = edge_lbl or fallback_label or ""
+            props_json = edge_props_json if edge_props_json not in (None, "", "{}") else fallback_props
+            already = b.execute(
+                "SELECT 1 FROM relation WHERE source = ? AND target = ?",
+                (s[0], t[0]),
+            ).fetchone()
+            if not already:
+                b.execute(
+                    "INSERT INTO relation (source, target, position, label, properties) "
+                    "VALUES (?, ?, ?, ?, ?)",
+                    (s[0], t[0], position, lbl_key, props_json),
+                )
+                e_new += 1
+            else:
+                b.execute(
+                    "UPDATE relation SET position = ?, label = ?, properties = ? "
+                    "WHERE source = ? AND target = ?",
+                    (position, lbl_key, props_json, s[0], t[0]),
+                )
+
+        # Also catch any edge-table edges not yet in Central relation table
+        for (source, target), (lbl_key, props_json) in edge_metadata.items():
+            if (source, target) in central_edges:
+                continue   # already handled above
             central_edges.add((source, target))
             s = b.execute("SELECT id FROM node WHERE LOWER(name) = ?", (source,)).fetchone()
             t = b.execute("SELECT id FROM node WHERE LOWER(name) = ?", (target,)).fetchone()
@@ -728,48 +819,20 @@ def sync_c2b(project: str, central: duckdb.DuckDBPyConnection,
                 (s[0], t[0]),
             ).fetchone()
             if not already:
+                pos = b.execute(
+                    "SELECT COUNT(*) FROM relation WHERE target = ?", (t[0],)
+                ).fetchone()[0]
                 b.execute(
-                    "INSERT INTO relation (source, target, position) VALUES (?, ?, ?)",
-                    (s[0], t[0], position),
+                    "INSERT INTO relation (source, target, position, label, properties) "
+                    "VALUES (?, ?, ?, ?, ?)",
+                    (s[0], t[0], pos, lbl_key, props_json),
                 )
                 e_new += 1
             else:
                 b.execute(
-                    "UPDATE relation SET position = ? WHERE source = ? AND target = ?",
-                    (position, s[0], t[0]),
+                    "UPDATE relation SET label = ?, properties = ? WHERE source = ? AND target = ?",
+                    (lbl_key, props_json, s[0], t[0]),
                 )
-
-        # Also catch any edge-table edges not yet in Central relation table
-        for etbl in _edge_tables(central):
-            try:
-                extra_edges = central.execute(
-                    f'SELECT from_id, to_id, label FROM "{etbl}"'
-                    " WHERE list_contains(bayesian_network, ?)",
-                    (project,),
-                ).fetchall()
-            except Exception:
-                continue
-            for source, target, edge_lbl in extra_edges:
-                if (source, target) in central_edges:
-                    continue   # already handled above
-                central_edges.add((source, target))
-                s = b.execute("SELECT id FROM node WHERE LOWER(name) = ?", (source,)).fetchone()
-                t = b.execute("SELECT id FROM node WHERE LOWER(name) = ?", (target,)).fetchone()
-                if not s or not t:
-                    continue
-                already = b.execute(
-                    "SELECT 1 FROM relation WHERE source = ? AND target = ?",
-                    (s[0], t[0]),
-                ).fetchone()
-                if not already:
-                    pos = b.execute(
-                        "SELECT COUNT(*) FROM relation WHERE target = ?", (t[0],)
-                    ).fetchone()[0]
-                    b.execute(
-                        "INSERT INTO relation (source, target, position, label) VALUES (?, ?, ?, ?)",
-                        (s[0], t[0], pos, edge_lbl or ""),
-                    )
-                    e_new += 1
 
         # ── 3. Sync CPT from Central ──────────────────────────────────────────
         cpt_rows = central.execute(
