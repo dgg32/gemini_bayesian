@@ -87,7 +87,7 @@ def export(project_name: str, output_folder: str) -> None:
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
-        print("Usage: python to_neo4j.py <project_name> <output_folder>")
+        print("Usage: python neo4j_exporter.py <project_name> <output_folder>")
         sys.exit(1)
 
     export(sys.argv[1], sys.argv[2])

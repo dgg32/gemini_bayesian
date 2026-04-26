@@ -114,7 +114,7 @@ def import_bif(bif_path: str, db_path: str, overwrite: bool = False) -> None:
             # cpd.variables = [child, parent0, parent1, ...]
             parents = cpd.variables[1:]
 
-            # BIF model guarantees each edge is unique; no need to check existence
+            conn.execute("DELETE FROM relation WHERE target = ?", (node_id,))
             for pos, parent in enumerate(parents):
                 conn.execute(
                     "INSERT INTO relation (source, target, position) VALUES (?, ?, ?)",
