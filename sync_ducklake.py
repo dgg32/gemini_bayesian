@@ -100,7 +100,7 @@ def pull(dst_path: str, conn: duckdb.DuckDBPyConnection, db_name: str) -> None:
             print(f"  {tbl} … ", end="", flush=True)
             conn.execute(f'DROP TABLE IF EXISTS _dst.main."{tbl}"')
             conn.execute(
-                f'CREATE TABLE _dst.main."{tbl}" AS SELECT * FROM main."{tbl}"'
+                f'CREATE TABLE _dst.main."{tbl}" AS SELECT * FROM "{db_name}".main."{tbl}"'
             )
             n = conn.execute(
                 f'SELECT COUNT(*) FROM _dst.main."{tbl}"'

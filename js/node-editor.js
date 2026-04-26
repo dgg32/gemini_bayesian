@@ -349,16 +349,31 @@ async function deleteNode() {
     delete globalNodeData[nodeId];
 
     // Reset panel
+    resetEditorPanel();
+    document.getElementById('cpt-table-container').innerHTML = '<i>Node deleted.</i>';
+}
+
+function resetEditorPanel() {
+    currentNodeId = null;
+    currentEdge = null;
+    currentProperties = {};
+    currentEdgeProperties = {};
+
     const nIdField = document.getElementById('n-id');
     nIdField.value = '';
     nIdField.readOnly = false;
     document.getElementById('n-states').value = '';
     document.getElementById('n-parents').value = '';
-    document.getElementById('cpt-table-container').innerHTML = '<i>Node deleted.</i>';
+    populateLabelFields('');
+    document.getElementById('cpt-table-container').innerHTML = '';
     document.getElementById('edit-title').textContent = 'Add / Edit Node';
     document.getElementById('cpt-label').textContent = 'CPT Matrix';
-    currentNodeId = null;
-    currentProperties = {};
     renderPropertiesList();
-    populateLabelFields('');
+
+    document.getElementById('edge-label-input').value = '';
+    document.getElementById('edge-section').style.display = 'none';
+    renderEdgePropertiesList();
+
+    clearNodeDirty();
+    clearEdgeDirty();
 }

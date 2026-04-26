@@ -17,6 +17,7 @@ async function switchProject() {
     labelColors = {};
     document.getElementById('evidence-log').innerText = '(none)';
     document.getElementById('inference-hints').innerHTML = '<i class="hint-text">(set evidence to see rankings)</i>';
+    resetEditorPanel();
     await loadNetwork();
 }
 
