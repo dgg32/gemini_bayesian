@@ -125,7 +125,11 @@ document.getElementById('edge-label-input').addEventListener('input', markEdgeDi
 // ── Bootstrap ────────────────────────────────────────────────────────────────
 async function init() {
     document.getElementById('tab-edit').classList.add('active');
-    await loadProjects();
-    await loadNetwork();
+    try {
+        await loadProjects();
+        await loadNetwork();
+    } catch (e) {
+        alert('Could not reach the backend. Is uvicorn running on port 8000?\n\nRefresh once the server is ready.');
+    }
 }
 init();
