@@ -51,7 +51,7 @@ scikit-learn==1.8.0
 scipy==1.17.1
 six==1.17.0
 stack-data==0.6.3
-starlette==0.52.1
+starlette==1.0.1
 statsmodels==0.14.6
 sympy==1.14.0
 threadpoolctl==3.6.0
